@@ -1,15 +1,18 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/app/components/button"
+import { Input } from "@/app/components/input"
+import { Label } from "@/app/components/label"
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/alert"
 import { Loader2 } from 'lucide-react'
+import { CodeReviewDisplay } from './CodeReviewDisplay'
+import { Footer } from './Footer'
 
-export default function GitHubForm() {
+export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(false)
-  const [result, setResult] = useState<string>('')
+  const [result, setResult] = useState<any>()
+  const [metaData, setMetaData] = useState<any>()
   const [error, setError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -24,7 +27,7 @@ export default function GitHubForm() {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
-    setResult('')
+    setResult(null)
     setError(null)
 
     const formData = new FormData(event.currentTarget)
@@ -40,25 +43,16 @@ export default function GitHubForm() {
           repo: formData.get('repo'),
           sha: formData.get('sha'),
         }),
-        signal: abortControllerRef.current.signal,
       })
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
-      const reader = response.body?.getReader()
-      if (!reader) {
-        throw new Error('ReadableStream not supported')
-      }
-
-      const decoder = new TextDecoder()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const chunk = decoder.decode(value, { stream: true })
-        setResult(prev => prev + chunk)
-      }
+      const data = await response.json()
+      const extractedData = extractJson(data.content)
+      setMetaData(data.metadata)
+      console.log('Data:', metaData)
+      setResult(extractedData)
     } catch (e) {
       if (e instanceof Error) {
         setError(e.name === 'AbortError' ? 'Request was cancelled' : e.message)
@@ -69,9 +63,29 @@ export default function GitHubForm() {
       setIsLoading(false)
     }
   }
+  function extractJson(inputString: string) {
+    // Regular expression to match JSON content inside triple backticks and within the 'json' block
+    const regex = /```json\s([\s\S]*?)```/;
+    
+    // Match the JSON content from the string
+    const match = inputString.match(regex);
+    
+    if (match && match[1]) {
+      try {
+        // Parse the matched JSON string and return it
+        return JSON.parse(match[1]);
+      } catch (error) {
+        console.error("Error parsing JSON:", error);
+        return null;
+      }
+    } else {
+      console.log("No JSON content found.");
+      return null;
+    }
+  }
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto">
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <Label htmlFor="repo">GitHub Repository</Label>
@@ -99,10 +113,10 @@ export default function GitHubForm() {
         </Alert>
       )}
       {result && (
-        <div className="mt-4 p-6 bg-gray-100 rounded-md shadow-md">
-          <h2 className="text-2xl font-bold mb-4">Code Review Results</h2>
-          <pre className="whitespace-pre-wrap text-sm">{result}</pre>
-        </div>
+        <CodeReviewDisplay review={result} />
+      )}
+      {metaData && (
+        <Footer metaData={metaData} />
       )}
     </div>
   )

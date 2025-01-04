@@ -1,7 +1,6 @@
-// app/api/code-review/route.ts
-import { CodeReviewService } from '@/app/code-review';
-import { GitHubService } from '@/app/github';
-import { codeReviewSchema } from '@/app/validation';
+import { CodeReviewService } from '@/app/lib/code-review';
+import { GitHubService } from '@/app/lib/github';
+import { codeReviewSchema } from '@/app/lib/validation';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { z } from 'zod';
@@ -32,17 +31,16 @@ export async function POST(request: NextRequest) {
       validatedData.repo,
       validatedData.sha
     );
-
     // Generate review
     const review = await codeReviewService.reviewCode(codeContent);
-
+    console.log('Code review:', review);
     return NextResponse.json({
       success: true,
       content: review,
       metadata: {
         repo: validatedData.repo,
         sha: validatedData.sha,
-        model: 'mistralai/Mistral-7B-Instruct-v0.2',
+        model: 'Qwen/QwQ-32B-Preview',
         timestamp: new Date().toISOString()
       }
     });
@@ -59,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof Error) {
       return NextResponse.json(
-        { error: error.message },
+        { error: error },
         { status: 500 }
       );
     }
