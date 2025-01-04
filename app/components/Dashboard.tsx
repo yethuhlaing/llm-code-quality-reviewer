@@ -8,11 +8,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/app/components/alert"
 import { Loader2 } from 'lucide-react'
 import { CodeReviewDisplay } from './CodeReviewDisplay'
 import { Footer } from './Footer'
+import { CodeReview, metadata } from '../types'
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(false)
-  const [result, setResult] = useState<any>()
-  const [metaData, setMetaData] = useState<any>()
+  const [result, setResult] = useState<CodeReview>()
+  const [metaData, setMetaData] = useState<metadata>()
   const [error, setError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -27,7 +28,7 @@ export default function Dashboard() {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
-    setResult(null)
+    setResult(undefined)
     setError(null)
 
     const formData = new FormData(event.currentTarget)

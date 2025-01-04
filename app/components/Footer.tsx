@@ -1,8 +1,9 @@
 import { Bot, Box, Clock, GitBranch } from 'lucide-react'
 import React from 'react'
 import { Card, CardContent } from './card'
+import { metadata } from '../types';
 
-export const Footer = ({ metaData }: any) => {
+export const Footer = ({ metaData }: {metaData: metadata}) => {
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString(undefined, {
             year: 'numeric',
