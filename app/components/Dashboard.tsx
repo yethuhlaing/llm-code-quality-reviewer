@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react'
 import { CodeReviewDisplay } from './CodeReviewDisplay'
 import { Footer } from './Footer'
 import { CodeReview, metadata } from '../types'
+import { OriginalCodeDisplay } from './OriginalCodeDisplay'
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(false)
@@ -16,7 +17,8 @@ export default function Dashboard() {
   const [metaData, setMetaData] = useState<metadata>()
   const [error, setError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
-
+  const [original, setOriginal] = useState<string>()
+ 
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -29,6 +31,7 @@ export default function Dashboard() {
     event.preventDefault()
     setIsLoading(true)
     setResult(undefined)
+    setOriginal(undefined)
     setError(null)
 
     const formData = new FormData(event.currentTarget)
@@ -45,15 +48,22 @@ export default function Dashboard() {
           sha: formData.get('sha'),
         }),
       })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+       
+      // if (!response.ok) {
+      //   throw new Error(`status: ${response.status}! error: ${response}`)
+      // }
+      const result = await response.json()
+      if (!result.success) {
+        console.error(`${result.error.type}: ${result.error.message}`);
+        setError(result.error.message);
+      } else {
+        setMetaData(result.metadata)
+        setOriginal(result.original)
+        setResult(result.content)
+        console.log('Data:', metaData)
+        console.log('Original:', original)
       }
-      const data = await response.json()
-      const extractedData = extractJson(data.content)
-      setMetaData(data.metadata)
-      console.log('Data:', metaData)
-      setResult(extractedData)
+
     } catch (e) {
       if (e instanceof Error) {
         setError(e.name === 'AbortError' ? 'Request was cancelled' : e.message)
@@ -64,26 +74,26 @@ export default function Dashboard() {
       setIsLoading(false)
     }
   }
-  function extractJson(inputString: string) {
-    // Regular expression to match JSON content inside triple backticks and within the 'json' block
-    const regex = /```json\s([\s\S]*?)```/;
+  // function extractJson(inputString: string) {
+  //   // Regular expression to match JSON content inside triple backticks and within the 'json' block
+  //   const regex = /```json\s([\s\S]*?)```/;
     
-    // Match the JSON content from the string
-    const match = inputString.match(regex);
+  //   // Match the JSON content from the string
+  //   const match = inputString.match(regex);
     
-    if (match && match[1]) {
-      try {
-        // Parse the matched JSON string and return it
-        return JSON.parse(match[1]);
-      } catch (error) {
-        console.error("Error parsing JSON:", error);
-        return null;
-      }
-    } else {
-      console.log("No JSON content found.");
-      return null;
-    }
-  }
+  //   if (match && match[1]) {
+  //     try {
+  //       // Parse the matched JSON string and return it
+  //       return JSON.parse(match[1]);
+  //     } catch (error) {
+  //       console.error("Error parsing JSON:", error);
+  //       return null;
+  //     }
+  //   } else {
+  //     console.log("No JSON content found.");
+  //     return null;
+  //   }
+  // }
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -97,7 +107,7 @@ export default function Dashboard() {
           <Input id="sha" name="sha" placeholder="40-character SHA" required />
         </div>
         <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading ? (
+          {isLoading && !error ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Reviewing...
@@ -113,9 +123,18 @@ export default function Dashboard() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      {result && (
-        <CodeReviewDisplay review={result} />
-      )}
+      <div className='flex flex-col mt-4'>  
+          <div>
+            {original && (
+              <OriginalCodeDisplay original={original} />
+            )}
+          </div>
+          <div>
+            {result && (
+              <CodeReviewDisplay review={result} />
+            )}
+          </div>
+      </div>
       {metaData && (
         <Footer metaData={metaData} />
       )}

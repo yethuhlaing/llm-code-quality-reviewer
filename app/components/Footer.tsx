@@ -18,7 +18,7 @@ export const Footer = ({ metaData }: {metaData: metadata}) => {
         return sha.substring(0, 7);
     };
   return (
-    <footer className="mt-8 border-t pt-4">
+    <footer className="my-8 border-t pt-4">
       <Card className="bg-slate-50">
         <CardContent className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-4 p-4">
           <div className="flex items-center gap-2 text-sm text-slate-600">

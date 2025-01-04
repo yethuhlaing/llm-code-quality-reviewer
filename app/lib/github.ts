@@ -78,7 +78,10 @@ export class GitHubService {
         if (error instanceof Error) {
           throw new Error(`GitHub API Error: ${error.message}`);
         }
-        throw error;
+        if (typeof error === 'object' && error !== null && 'message' in error) {
+          return (error as Error).message;
+        }
+        return String(error);
       }
     }
   }

@@ -33,14 +33,14 @@ export async function POST(request: NextRequest) {
     );
     // Generate review
     const review = await codeReviewService.reviewCode(codeContent);
-    console.log('Code review:', review);
     return NextResponse.json({
       success: true,
+      original: codeContent,
       content: review,
       metadata: {
         repo: validatedData.repo,
         sha: validatedData.sha,
-        model: 'Qwen/QwQ-32B-Preview',
+        model: 'microsoft/Phi-3.5-mini-instruct',
         timestamp: new Date().toISOString()
       }
     });
@@ -50,20 +50,38 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: error.errors.map(e => e.message).join('\n') },
+        { 
+          success: false,
+          error: {
+            type: 'ValidationError',
+            message: error.errors.map(e => e.message).join(', ')
+          }
+        },
         { status: 400 }
       );
     }
 
     if (error instanceof Error) {
       return NextResponse.json(
-        { error: error },
+        { 
+          success: false,
+          error: {
+            type: error.name || 'Error',
+            message: error.message || 'An unexpected error occurred'
+          }
+        },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
-      { error: 'An unexpected error occurred' },
+      { 
+        success: false,
+        error: {
+          type: 'UnknownError',
+          message: String(error) || 'An unknown error occurred'
+        }
+      },
       { status: 500 }
     );
   }
